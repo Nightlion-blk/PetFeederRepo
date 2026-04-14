@@ -1,0 +1,16 @@
+<resources>
+
+    <!-- Main app theme -->
+    <style name="Theme.TestingApplication" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowTranslucentStatus">true</item>
+    </style>
+
+    <!-- Splash screen theme -->
+    <style name="Theme.TestingApplication.SplashScreen" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#0D0D0F</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/dogo_photo_01</item>
+        <item name="postSplashScreenTheme">@style/Theme.TestingApplication</item>
+    </style>
+
+</resources>
