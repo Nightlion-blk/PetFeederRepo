@@ -17,7 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -31,8 +30,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.Image
 import androidx.navigation.NavController
 import com.example.testingapplication.R
+import com.google.firebase.auth.FirebaseAuth  // ✅ Firebase Auth import
 
-// ── Colors from Figma ──
 private val BgDark      = Color(0xFF1C2333)
 private val CardBg      = Color(0xFF2A3240)
 private val AccentBlue  = Color(0xFF3D7BF5)
@@ -40,14 +39,87 @@ private val TextWhite   = Color(0xFFFFFFFF)
 private val TextGray    = Color(0xFF8A94A6)
 private val FieldBg     = Color(0xFF1E2736)
 private val BorderColor = Color(0xFF3A4558)
+private val ErrorRed    = Color(0xFFFF5252)
 
 @Composable
 fun LoginScreen(navController: NavController) {
+
+    val auth = remember { FirebaseAuth.getInstance() }
 
     var email           by remember { mutableStateOf("") }
     var password        by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var termsAccepted   by remember { mutableStateOf(false) }
+    var isLoading       by remember { mutableStateOf(false) }
+    var errorMessage    by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        if (auth.currentUser != null) {
+            navController.navigate("dashboard") {
+                popUpTo("login") { inclusive = true }
+            }
+        }
+    }
+
+    fun loginWithFirebase() {
+        if (email.isBlank() || password.isBlank()) {
+            errorMessage = "Please fill in all fields."
+            return
+        }
+        isLoading = true
+        errorMessage = ""
+
+        auth.signInWithEmailAndPassword(email.trim(), password)
+            .addOnSuccessListener {
+                isLoading = false
+                navController.navigate("dashboard") {
+                    popUpTo("login") { inclusive = true }
+                }
+            }
+            .addOnFailureListener { exception ->
+                isLoading = false
+                errorMessage = when {
+                    exception.message?.contains("no user record") == true ->
+                        "No account found with this email."
+                    exception.message?.contains("password is invalid") == true ->
+                        "Incorrect password. Try again."
+                    exception.message?.contains("badly formatted") == true ->
+                        "Invalid email format."
+                    else -> exception.message ?: "Login failed. Try again."
+                }
+            }
+    }
+
+    fun createAccount() {
+        if (email.isBlank() || password.isBlank()) {
+            errorMessage = "Please fill in all fields."
+            return
+        }
+        if (password.length < 6) {
+            errorMessage = "Password must be at least 6 characters."
+            return
+        }
+        isLoading = true
+        errorMessage = ""
+
+        auth.createUserWithEmailAndPassword(email.trim(), password)
+            .addOnSuccessListener {
+                isLoading = false
+                navController.navigate("dashboard") {
+                    popUpTo("login") { inclusive = true }
+                }
+            }
+            .addOnFailureListener { exception ->
+                isLoading = false
+                errorMessage = when {
+                    exception.message?.contains("already in use") == true ->
+                        "This email is already registered. Try logging in."
+                    exception.message?.contains("badly formatted") == true ->
+                        "Invalid email format."
+                    else -> exception.message ?: "Registration failed. Try again."
+                }
+            }
+    }
 
     Box(
         modifier = Modifier
@@ -55,32 +127,20 @@ fun LoginScreen(navController: NavController) {
             .statusBarsPadding()
             .background(BgDark)
     ) {
-
-        // ── Dog image top half ──
         Image(
             painter            = painterResource(id = R.drawable.dogo_photo_01),
             contentDescription = null,
             contentScale       = ContentScale.Crop,
             modifier           = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.45f)        // top 45% of screen
+                .fillMaxHeight(0.45f)
                 .align(Alignment.TopCenter)
         )
 
-        // ── Gradient fade from image into card ──
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(120.dp)
-                .align(Alignment.TopCenter)
-                .offset(y = (LocalDensity_hack * 0.35f).dp)
-        )
-
-        // ── Bottom card sheet ──
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.65f)        // bottom 65%
+                .fillMaxHeight(0.65f)
                 .align(Alignment.BottomCenter)
                 .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
                 .background(CardBg)
@@ -89,19 +149,15 @@ fun LoginScreen(navController: NavController) {
                 .padding(bottom = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Spacer(Modifier.height(48.dp))
 
-            Spacer(Modifier.height(48.dp))  // space for the avatar overlap
-
-            // ── Title ──
             Text(
                 text       = "Login account",
                 fontSize   = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color      = TextWhite
             )
-
             Spacer(Modifier.height(8.dp))
-
             Text(
                 text      = "Welcome! Please enter your information\nbelow to login.",
                 fontSize  = 14.sp,
@@ -109,35 +165,32 @@ fun LoginScreen(navController: NavController) {
                 textAlign = TextAlign.Center,
                 lineHeight = 20.sp
             )
-
             Spacer(Modifier.height(28.dp))
 
             // ── Email Field ──
             OutlinedTextField(
                 value         = email,
-                onValueChange = { email = it },
+                onValueChange = { email = it; errorMessage = "" },
                 placeholder   = { Text("Your email", color = TextGray) },
                 singleLine    = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 colors        = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor   = AccentBlue,
-                    unfocusedBorderColor = BorderColor,
-                    focusedTextColor     = TextWhite,
-                    unfocusedTextColor   = TextWhite,
-                    cursorColor          = AccentBlue,
+                    focusedBorderColor      = AccentBlue,
+                    unfocusedBorderColor    = BorderColor,
+                    focusedTextColor        = TextWhite,
+                    unfocusedTextColor      = TextWhite,
+                    cursorColor             = AccentBlue,
                     focusedContainerColor   = FieldBg,
                     unfocusedContainerColor = FieldBg,
                 ),
                 shape    = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             )
-
             Spacer(Modifier.height(12.dp))
 
-            // ── Password Field ──
             OutlinedTextField(
                 value         = password,
-                onValueChange = { password = it },
+                onValueChange = { password = it; errorMessage = "" },
                 placeholder   = { Text("Password", color = TextGray) },
                 singleLine    = true,
                 visualTransformation = if (passwordVisible)
@@ -165,6 +218,17 @@ fun LoginScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth()
             )
 
+            if (errorMessage.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text      = errorMessage,
+                    color     = ErrorRed,
+                    fontSize  = 13.sp,
+                    textAlign = TextAlign.Center,
+                    modifier  = Modifier.fillMaxWidth()
+                )
+            }
+
             Spacer(Modifier.height(16.dp))
 
             Row(
@@ -185,10 +249,9 @@ fun LoginScreen(navController: NavController) {
 
             Spacer(Modifier.height(24.dp))
 
-            // ── Create Account Button ──
             Button(
-                onClick  = { navController.navigate("dashboard") },
-                enabled  = termsAccepted,
+                onClick  = { loginWithFirebase() },
+                enabled  = termsAccepted && !isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
@@ -198,24 +261,29 @@ fun LoginScreen(navController: NavController) {
                     disabledContainerColor = AccentBlue.copy(alpha = 0.4f)
                 )
             ) {
-                Text(
-                    "Create account",
-                    fontSize   = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color      = Color.White
-                )
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        color  = TextWhite,
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text("Login", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                }
             }
 
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(12.dp))
 
-            Row {
-                Text("Already have an account? ", color = TextGray, fontSize = 14.sp)
-                Text(
-                    text       = "Log in here!",
-                    color      = AccentBlue,
-                    fontSize   = 14.sp,
-                    fontWeight = FontWeight.Bold
-                )
+            OutlinedButton(
+                onClick  = { createAccount() },
+                enabled  = termsAccepted && !isLoading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape  = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentBlue)
+            ) {
+                Text("Create account", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
             }
         }
 
@@ -238,6 +306,3 @@ fun LoginScreen(navController: NavController) {
         }
     }
 }
-
-private val LocalDensity_hack  = 812 * 0.35f
-private val LocalDensity_hack2 = 812 * 0.42f

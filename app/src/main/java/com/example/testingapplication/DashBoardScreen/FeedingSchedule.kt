@@ -1,6 +1,7 @@
 package com.example.testingapplication.DashBoardScreen
 
 import android.app.TimePickerDialog
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -20,6 +21,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import java.util.Calendar
 
 private val BgDark     = Color(0xFF1C2333)
@@ -40,15 +45,44 @@ data class ScheduledMeal(
 
 @Composable
 fun FeedingSchedule(navController: NavController) {
-    // Shared meal list state
-    var meals by remember {
-        mutableStateOf(
-            listOf(
-                ScheduledMeal("Breakfast", "10:00PM", 20),
-                ScheduledMeal("Dinner", "08:00PM", 10),
-                ScheduledMeal("Lunch", "12:00AM", 10),
-            )
-        )
+    var meals by remember { mutableStateOf<List<ScheduledMeal>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    // ✅ Fetch from Firebase
+    val ref = remember {
+        FirebaseDatabase.getInstance().getReference("petfeeder/schedule")
+    }
+
+    // ✅ Listen for real-time updates
+    LaunchedEffect(Unit) {
+        ref.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val fetchedMeals = mutableListOf<ScheduledMeal>()
+
+                for (child in snapshot.children) {
+                    val name  = child.child("name").getValue(String::class.java) ?: "Meal"
+                    val time  = child.child("time").getValue(String::class.java) ?: ""
+                    val grams = child.child("grams").getValue(Int::class.java) ?: 0
+
+                    fetchedMeals.add(
+                        ScheduledMeal(
+                            name = name,
+                            time = time,
+                            grams = grams
+                        )
+                    )
+                }
+
+                meals = fetchedMeals
+                isLoading = false
+                Log.d("PetFeeder", "✅ Fetched ${fetchedMeals.size} meals")
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("PetFeeder", "❌ Failed: ${error.message}")
+                isLoading = false
+            }
+        })
     }
 
     Column(
@@ -59,17 +93,28 @@ fun FeedingSchedule(navController: NavController) {
     ) {
         FeedingScheduleHeader(navController)
         FeedingAddSchedule(onScheduleAdded = { newMeal ->
-            meals = meals + newMeal  // ← adds new meal to the list
+            meals = meals + newMeal
         })
-        ScheduledMealsList(
-            meals = meals,
-            onToggle = { index, enabled ->
-                meals = meals.toMutableList().also { it[index] = it[index].copy(isEnabled = enabled) }
-            }
-        )
+
+        // ✅ Show loading or meals
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(16.dp),
+                color = AccentBlue
+            )
+        } else {
+            ScheduledMealsList(
+                meals = meals,
+                onToggle = { index, enabled ->
+                    meals = meals.toMutableList()
+                        .also { it[index] = it[index].copy(isEnabled = enabled) }
+                }
+            )
+        }
     }
 }
-
 @Composable
 fun FeedingScheduleHeader(navController: NavController) {
     Box(
@@ -107,6 +152,9 @@ fun FeedingScheduleHeader(navController: NavController) {
 fun FeedingAddSchedule(onScheduleAdded: (ScheduledMeal) -> Unit) {
     var selectedTime by remember { mutableStateOf("") }
     var selectedGrams by remember { mutableStateOf(100) }
+
+    val database = FirebaseDatabase.getInstance()
+    val ref = database.getReference("petfeeder/schedule")
 
     Column(
         modifier = Modifier
@@ -148,10 +196,27 @@ fun FeedingAddSchedule(onScheduleAdded: (ScheduledMeal) -> Unit) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Add Feed Schedule button
         Button(
             onClick = {
                 if (selectedTime.isNotEmpty()) {
+                    val time = selectedTime
+                    val grams = selectedGrams
+                    val scheduleData = mapOf(
+                        "name" to "Meal",
+                        "time" to time,
+                        "grams" to grams
+                    )
+
+
+                    ref.push().setValue(scheduleData)
+                        .addOnSuccessListener {
+                            Log.d("PetFeeder", "✅ Schedule sent: $time, ${grams}g")  // ← Log.d not Log.debug
+                        }
+                        .addOnFailureListener { error ->
+                            Log.e("PetFeeder", "❌ Failed: ${error.message}")          // ← Log.e not Log.error
+                        }
+
+
                     onScheduleAdded(
                         ScheduledMeal(
                             name = "Meal",

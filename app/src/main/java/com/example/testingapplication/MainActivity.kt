@@ -1,9 +1,11 @@
 package com.example.testingapplication
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.remote.creation.compose.state.log
 import androidx.compose.runtime.Composable
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
@@ -21,12 +23,23 @@ import com.example.testingapplication.FeedingHistory.FeedingHistory
 import com.example.testingapplication.login.LoginScreen
 import com.example.testingapplication.ui.splash.SplashScreen
 import com.example.testingapplication.ui.theme.TestingApplicationTheme
+import com.google.firebase.database.BuildConfig
+import com.google.firebase.database.FirebaseDatabase
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        installSplashScreen()        // ← add this if you use splash screen
-        enableEdgeToEdge()           // ← this alone is enough, keep only this
+
+        // ✅ No URL needed - google-services.json handles it
+        val database = FirebaseDatabase.getInstance()
+        val ref = database.getReference("test")
+
+        ref.setValue("Firebase Connected!")
+        Log.d("PetFeeder", "Firebase Connected!")
+
+        installSplashScreen()
+        enableEdgeToEdge()
         setContent {
             TestingApplicationTheme {
                 AppNavigation()
