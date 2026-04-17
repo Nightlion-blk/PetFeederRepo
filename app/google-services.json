@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "369593620069",
+    "firebase_url": "https://petfeeder-fdce3-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "petfeeder-fdce3",
+    "storage_bucket": "petfeeder-fdce3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:369593620069:android:59ee9f90988a8330f2988c",
+        "android_client_info": {
+          "package_name": "com.example.testingapplication"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAip0LK8fhTmLdobewi-hCX-meyLpZOnUg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
