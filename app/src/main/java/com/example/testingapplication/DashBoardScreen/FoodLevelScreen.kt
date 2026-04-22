@@ -54,8 +54,10 @@ private val AccentBlue = Color(0xFF3D7BF5)
 private val TextWhite  = Color(0xFFFFFFFF)
 private val TextGray   = Color(0xFF8A94A6)
 
+
 @Composable
-fun FoodLevel(navController: NavController) {  // ✅ lowercase navController
+fun FoodLevel(navController: NavController) {
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -65,6 +67,9 @@ fun FoodLevel(navController: NavController) {  // ✅ lowercase navController
         FoodLevelHeader(navController)
         PetImage(null)
         Spacer(Modifier.height(16.dp))
+
+        
+
         PercentageInfoCard(70, "2 hours ago", "8:00 PM / 10:00 AM")
         Spacer(Modifier.height(24.dp))
     }

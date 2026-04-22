@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.Image
 import androidx.navigation.NavController
 import com.example.testingapplication.R
-import com.google.firebase.auth.FirebaseAuth  // ✅ Firebase Auth import
+import com.google.firebase.auth.FirebaseAuth
 
 private val BgDark      = Color(0xFF1C2333)
 private val CardBg      = Color(0xFF2A3240)
@@ -49,7 +49,6 @@ fun LoginScreen(navController: NavController) {
     var email           by remember { mutableStateOf("") }
     var password        by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var termsAccepted   by remember { mutableStateOf(false) }
     var isLoading       by remember { mutableStateOf(false) }
     var errorMessage    by remember { mutableStateOf("") }
 
@@ -90,37 +89,6 @@ fun LoginScreen(navController: NavController) {
             }
     }
 
-    fun createAccount() {
-        if (email.isBlank() || password.isBlank()) {
-            errorMessage = "Please fill in all fields."
-            return
-        }
-        if (password.length < 6) {
-            errorMessage = "Password must be at least 6 characters."
-            return
-        }
-        isLoading = true
-        errorMessage = ""
-
-        auth.createUserWithEmailAndPassword(email.trim(), password)
-            .addOnSuccessListener {
-                isLoading = false
-                navController.navigate("dashboard") {
-                    popUpTo("login") { inclusive = true }
-                }
-            }
-            .addOnFailureListener { exception ->
-                isLoading = false
-                errorMessage = when {
-                    exception.message?.contains("already in use") == true ->
-                        "This email is already registered. Try logging in."
-                    exception.message?.contains("badly formatted") == true ->
-                        "Invalid email format."
-                    else -> exception.message ?: "Registration failed. Try again."
-                }
-            }
-    }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -149,7 +117,24 @@ fun LoginScreen(navController: NavController) {
                 .padding(bottom = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.height(48.dp))
+            Spacer(Modifier.height((-40).dp))
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .border(2.dp, AccentBlue, CircleShape)
+                    .clip(CircleShape)
+                    .background(CardBg),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector        = Icons.Filled.Person,
+                    contentDescription = null,
+                    tint               = AccentBlue,
+                    modifier           = Modifier.size(36.dp)
+                )
+            }
+
+            Spacer(Modifier.height(16.dp))
 
             Text(
                 text       = "Login account",
@@ -159,22 +144,22 @@ fun LoginScreen(navController: NavController) {
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text      = "Welcome! Please enter your information\nbelow to login.",
-                fontSize  = 14.sp,
-                color     = TextGray,
-                textAlign = TextAlign.Center,
+                text       = "Welcome! Please enter your information\nbelow to login.",
+                fontSize   = 14.sp,
+                color      = TextGray,
+                textAlign  = TextAlign.Center,
                 lineHeight = 20.sp
             )
             Spacer(Modifier.height(28.dp))
 
             // ── Email Field ──
             OutlinedTextField(
-                value         = email,
-                onValueChange = { email = it; errorMessage = "" },
-                placeholder   = { Text("Your email", color = TextGray) },
-                singleLine    = true,
+                value           = email,
+                onValueChange   = { email = it; errorMessage = "" },
+                placeholder     = { Text("Your email", color = TextGray) },
+                singleLine      = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                colors        = OutlinedTextFieldDefaults.colors(
+                colors          = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor      = AccentBlue,
                     unfocusedBorderColor    = BorderColor,
                     focusedTextColor        = TextWhite,
@@ -188,6 +173,7 @@ fun LoginScreen(navController: NavController) {
             )
             Spacer(Modifier.height(12.dp))
 
+            // ── Password Field ──
             OutlinedTextField(
                 value         = password,
                 onValueChange = { password = it; errorMessage = "" },
@@ -198,10 +184,10 @@ fun LoginScreen(navController: NavController) {
                 trailingIcon  = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(
-                            imageVector = if (passwordVisible)
+                            imageVector        = if (passwordVisible)
                                 Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
                             contentDescription = null,
-                            tint = TextGray
+                            tint               = TextGray
                         )
                     }
                 },
@@ -229,29 +215,12 @@ fun LoginScreen(navController: NavController) {
                 )
             }
 
-            Spacer(Modifier.height(16.dp))
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier          = Modifier.fillMaxWidth()
-            ) {
-                Checkbox(
-                    checked         = termsAccepted,
-                    onCheckedChange = { termsAccepted = it },
-                    colors          = CheckboxDefaults.colors(
-                        checkedColor   = AccentBlue,
-                        uncheckedColor = BorderColor
-                    )
-                )
-                Spacer(Modifier.width(8.dp))
-                Text("Accept Terms and Conditions", color = TextGray, fontSize = 14.sp)
-            }
-
             Spacer(Modifier.height(24.dp))
 
+            // ── Login Button ──
             Button(
                 onClick  = { loginWithFirebase() },
-                enabled  = termsAccepted && !isLoading,
+                enabled  = !isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
@@ -263,8 +232,8 @@ fun LoginScreen(navController: NavController) {
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
-                        color  = TextWhite,
-                        modifier = Modifier.size(20.dp),
+                        color       = TextWhite,
+                        modifier    = Modifier.size(20.dp),
                         strokeWidth = 2.dp
                     )
                 } else {
@@ -275,34 +244,17 @@ fun LoginScreen(navController: NavController) {
             Spacer(Modifier.height(12.dp))
 
             OutlinedButton(
-                onClick  = { createAccount() },
-                enabled  = termsAccepted && !isLoading,
+                onClick  = { navController.navigate("register") },
+                enabled  = !isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
                 shape  = RoundedCornerShape(14.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, AccentBlue),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentBlue)
             ) {
                 Text("Create account", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
             }
-        }
-
-        Box(
-            modifier = Modifier
-                .size(80.dp)
-                .align(Alignment.TopCenter)
-                .offset(y = 250.dp)
-                .border(2.dp, AccentBlue, CircleShape)
-                .clip(CircleShape)
-                .background(CardBg),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector        = Icons.Filled.Person,
-                contentDescription = null,
-                tint               = AccentBlue,
-                modifier           = Modifier.size(36.dp)
-            )
         }
     }
 }

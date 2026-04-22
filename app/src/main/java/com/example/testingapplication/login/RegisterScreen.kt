@@ -34,14 +34,14 @@ import com.example.testingapplication.R
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.userProfileChangeRequest
 
-private val BgDark      = Color(0xFF1C2333)
-private val CardBg      = Color(0xFF2A3240)
-private val AccentBlue  = Color(0xFF3D7BF5)
-private val TextWhite   = Color(0xFFFFFFFF)
-private val TextGray    = Color(0xFF8A94A6)
-private val FieldBg     = Color(0xFF1E2736)
-private val BorderColor = Color(0xFF3A4558)
-private val ErrorRed    = Color(0xFFFF5252)
+private val BgDark       = Color(0xFF1C2333)
+private val CardBg       = Color(0xFF2A3240)
+private val AccentBlue   = Color(0xFF3D7BF5)
+private val TextWhite    = Color(0xFFFFFFFF)
+private val TextGray     = Color(0xFF8A94A6)
+private val FieldBg      = Color(0xFF1E2736)
+private val BorderColor  = Color(0xFF3A4558)
+private val ErrorRed     = Color(0xFFFF5252)
 private val SuccessGreen = Color(0xFF4CAF50)
 
 @Composable
@@ -49,18 +49,17 @@ fun RegisterScreen(navController: NavController) {
 
     val auth = remember { FirebaseAuth.getInstance() }
 
-    var fullName          by remember { mutableStateOf("") }
-    var email             by remember { mutableStateOf("") }
-    var password          by remember { mutableStateOf("") }
-    var confirmPassword   by remember { mutableStateOf("") }
-    var passwordVisible   by remember { mutableStateOf(false) }
-    var confirmVisible    by remember { mutableStateOf(false) }
-    var termsAccepted     by remember { mutableStateOf(false) }
-    var isLoading         by remember { mutableStateOf(false) }
-    var errorMessage      by remember { mutableStateOf("") }
-    var successMessage    by remember { mutableStateOf("") }
+    var fullName        by remember { mutableStateOf("") }
+    var email           by remember { mutableStateOf("") }
+    var password        by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var confirmVisible  by remember { mutableStateOf(false) }
+    var termsAccepted   by remember { mutableStateOf(false) }
+    var isLoading       by remember { mutableStateOf(false) }
+    var errorMessage    by remember { mutableStateOf("") }
+    var successMessage  by remember { mutableStateOf("") }
 
-    // ── Field-level validation errors ──
     val nameError     = fullName.isNotEmpty() && fullName.length < 2
     val emailError    = email.isNotEmpty() && !email.contains("@")
     val passwordError = password.isNotEmpty() && password.length < 6
@@ -82,23 +81,19 @@ fun RegisterScreen(navController: NavController) {
 
     fun registerWithFirebase() {
         if (!validateAll()) return
-
         isLoading = true
         errorMessage = ""
         successMessage = ""
 
         auth.createUserWithEmailAndPassword(email.trim(), password)
             .addOnSuccessListener { result ->
-                // ✅ Save display name to Firebase profile
-                val profileUpdate = userProfileChangeRequest {
-                    displayName = fullName.trim()
-                }
+                val profileUpdate = userProfileChangeRequest { displayName = fullName.trim() }
                 result.user?.updateProfile(profileUpdate)
                     ?.addOnCompleteListener {
                         isLoading = false
                         successMessage = "Account created! Redirecting..."
                         navController.navigate("dashboard") {
-                            popUpTo("register") { inclusive = true }
+                            popUpTo(0) { inclusive = true }
                         }
                     }
             }
@@ -123,7 +118,7 @@ fun RegisterScreen(navController: NavController) {
             .background(BgDark)
     ) {
 
-        // ── Dog image top half ──
+        // ── Dog image ──
         Image(
             painter            = painterResource(id = R.drawable.dogo_photo_01),
             contentDescription = null,
@@ -148,7 +143,7 @@ fun RegisterScreen(navController: NavController) {
             )
         }
 
-        // ── Bottom card sheet ──
+        // ── Scrollable card ──
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -161,7 +156,26 @@ fun RegisterScreen(navController: NavController) {
                 .padding(bottom = 40.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.height(52.dp))
+
+            // ── Avatar inside column so it scrolls ──
+            Spacer(Modifier.height((-40).dp))
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .border(2.dp, AccentBlue, CircleShape)
+                    .clip(CircleShape)
+                    .background(CardBg),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector        = Icons.Filled.Person,
+                    contentDescription = null,
+                    tint               = AccentBlue,
+                    modifier           = Modifier.size(36.dp)
+                )
+            }
+
+            Spacer(Modifier.height(16.dp))
 
             Text(
                 text       = "Create Account",
@@ -180,53 +194,53 @@ fun RegisterScreen(navController: NavController) {
 
             // ── Full Name ──
             OutlinedTextField(
-                value         = fullName,
-                onValueChange = { fullName = it; errorMessage = "" },
-                placeholder   = { Text("Full name", color = TextGray) },
-                singleLine    = true,
-                isError       = nameError,
+                value          = fullName,
+                onValueChange  = { fullName = it; errorMessage = "" },
+                placeholder    = { Text("Full name", color = TextGray) },
+                singleLine     = true,
+                isError        = nameError,
                 supportingText = if (nameError) {
                     { Text("Name must be at least 2 characters", color = ErrorRed, fontSize = 11.sp) }
                 } else null,
-                colors        = fieldColors(),
-                shape         = RoundedCornerShape(12.dp),
-                modifier      = Modifier.fillMaxWidth()
+                colors   = fieldColors(),
+                shape    = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
             )
             Spacer(Modifier.height(10.dp))
 
             // ── Email ──
             OutlinedTextField(
-                value         = email,
-                onValueChange = { email = it; errorMessage = "" },
-                placeholder   = { Text("Email address", color = TextGray) },
-                singleLine    = true,
-                isError       = emailError,
+                value           = email,
+                onValueChange   = { email = it; errorMessage = "" },
+                placeholder     = { Text("Email address", color = TextGray) },
+                singleLine      = true,
+                isError         = emailError,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                supportingText = if (emailError) {
+                supportingText  = if (emailError) {
                     { Text("Enter a valid email address", color = ErrorRed, fontSize = 11.sp) }
                 } else null,
-                colors        = fieldColors(),
-                shape         = RoundedCornerShape(12.dp),
-                modifier      = Modifier.fillMaxWidth()
+                colors   = fieldColors(),
+                shape    = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
             )
             Spacer(Modifier.height(10.dp))
 
             // ── Password ──
             OutlinedTextField(
-                value         = password,
-                onValueChange = { password = it; errorMessage = "" },
-                placeholder   = { Text("Password", color = TextGray) },
-                singleLine    = true,
-                isError       = passwordError,
+                value                = password,
+                onValueChange        = { password = it; errorMessage = "" },
+                placeholder          = { Text("Password", color = TextGray) },
+                singleLine           = true,
+                isError              = passwordError,
                 visualTransformation = if (passwordVisible)
                     VisualTransformation.None else PasswordVisualTransformation(),
-                trailingIcon  = {
+                trailingIcon = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(
-                            imageVector = if (passwordVisible)
+                            imageVector        = if (passwordVisible)
                                 Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
                             contentDescription = null,
-                            tint = TextGray
+                            tint               = TextGray
                         )
                     }
                 },
@@ -241,20 +255,20 @@ fun RegisterScreen(navController: NavController) {
 
             // ── Confirm Password ──
             OutlinedTextField(
-                value         = confirmPassword,
-                onValueChange = { confirmPassword = it; errorMessage = "" },
-                placeholder   = { Text("Confirm password", color = TextGray) },
-                singleLine    = true,
-                isError       = confirmError,
+                value                = confirmPassword,
+                onValueChange        = { confirmPassword = it; errorMessage = "" },
+                placeholder          = { Text("Confirm password", color = TextGray) },
+                singleLine           = true,
+                isError              = confirmError,
                 visualTransformation = if (confirmVisible)
                     VisualTransformation.None else PasswordVisualTransformation(),
-                trailingIcon  = {
+                trailingIcon = {
                     IconButton(onClick = { confirmVisible = !confirmVisible }) {
                         Icon(
-                            imageVector = if (confirmVisible)
+                            imageVector        = if (confirmVisible)
                                 Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
                             contentDescription = null,
-                            tint = TextGray
+                            tint               = TextGray
                         )
                     }
                 },
@@ -309,7 +323,7 @@ fun RegisterScreen(navController: NavController) {
 
             Spacer(Modifier.height(20.dp))
 
-            // ── Register Button ──
+            // ── Sign Up Button ──
             Button(
                 onClick  = { registerWithFirebase() },
                 enabled  = !isLoading,
@@ -344,7 +358,7 @@ fun RegisterScreen(navController: NavController) {
             Row {
                 Text("Already have an account? ", color = TextGray, fontSize = 14.sp)
                 TextButton(
-                    onClick      = { navController.popBackStack() },
+                    onClick        = { navController.popBackStack() },
                     contentPadding = PaddingValues(0.dp)
                 ) {
                     Text(
@@ -355,25 +369,6 @@ fun RegisterScreen(navController: NavController) {
                     )
                 }
             }
-        }
-
-        // ── Avatar circle ──
-        Box(
-            modifier = Modifier
-                .size(80.dp)
-                .align(Alignment.TopCenter)
-                .offset(y = 210.dp)
-                .border(2.dp, AccentBlue, CircleShape)
-                .clip(CircleShape)
-                .background(CardBg),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector        = Icons.Filled.Person,
-                contentDescription = null,
-                tint               = AccentBlue,
-                modifier           = Modifier.size(36.dp)
-            )
         }
     }
 }

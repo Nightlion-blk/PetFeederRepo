@@ -55,7 +55,6 @@ data class SettingsSection(
     val rows: List<SettingRow>
 )
 
-// ─── Root Screen ──────────────────────────────────────────────────────────────
 
 @Composable
 fun SettingsScreen(navController: NavController) {
@@ -101,9 +100,6 @@ fun SettingsHeader(navController: NavController) {
         )
     }
 }
-
-// ─── Settings List ────────────────────────────────────────────────────────────
-
 @Composable
 fun SettingsList() {
     // Mutable toggle states

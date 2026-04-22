@@ -5,10 +5,8 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.remote.creation.compose.state.log
 import androidx.compose.runtime.Composable
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.core.view.WindowCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -21,21 +19,22 @@ import com.example.testingapplication.DashBoardScreen.PetProfile
 import com.example.testingapplication.DashBoardScreen.SettingsScreen
 import com.example.testingapplication.FeedingHistory.FeedingHistory
 import com.example.testingapplication.login.LoginScreen
+import com.example.testingapplication.login.RegisterScreen
 import com.example.testingapplication.ui.splash.SplashScreen
 import com.example.testingapplication.ui.theme.TestingApplicationTheme
-import com.google.firebase.database.BuildConfig
 import com.google.firebase.database.FirebaseDatabase
 
+const val DB_URL =
+    "https://petfeeder-fdce3-default-rtdb.asia-southeast1.firebasedatabase.app"
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // ✅ No URL needed - google-services.json handles it
-        val database = FirebaseDatabase.getInstance()
+        // ✅ Using correct Asia database URL
+        val database = FirebaseDatabase.getInstance(DB_URL)
         val ref = database.getReference("test")
-
-        ref.setValue("Firebase Connected!")
+        ref.setValue("Application: Firebase Connected!")
         Log.d("PetFeeder", "Firebase Connected!")
 
         installSplashScreen()
@@ -54,46 +53,40 @@ fun AppNavigation() {
 
     NavHost(
         navController    = navController,
-        startDestination = "dashboard"
+        startDestination = "login"
     ) {
-        // 1️⃣ Splash
         composable("splash") {
             SplashScreen(navController)
         }
-
-
+        composable("register") {
+            RegisterScreen(navController)
+        }
         composable("login") {
             LoginScreen(navController)
         }
-
         composable("dashboard") {
             DashboardScreen(navController)
         }
-
-        composable("schedule"){
+        composable("history") {
+            FeedingHistory(navController)
+        }
+        composable("schedule") {
             FeedingSchedule(navController)
         }
-
-        composable("foodLevel"){
-            FoodLevel(navController)
-        }
-
-        composable("petProfile"){
-            PetProfile(navController)
-        }
-
-        composable(route = "notification"){
+        composable("notification") {
             NotificationScreen(navController)
         }
-        composable(route = "settings"){
-            SettingsScreen(navController)
+        composable("foodLevel") {
+            FoodLevel(navController)
         }
-        composable(route = "feedinghistory"){
-            FeedingHistory(navController)
+        composable("petProfile") {
+            PetProfile(navController)
+        }
+        composable("settings") {
+            SettingsScreen(navController)
         }
         composable("addDevice") {
             AddDeviceScreen(navController)
         }
-
     }
 }
